@@ -1,0 +1,25 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  TAG: ${{ github.sha }}
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(git describe --tags --abbrev=0)
+          gh release create "$VERSION" \
+            --title "$VERSION" \
+            --generate-notes \
+            --repo ${{ github.repository }}
