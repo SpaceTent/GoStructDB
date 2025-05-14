@@ -139,7 +139,7 @@ func testIntegrationSaveTestHelper[T comparable](t *testing.T, testCases []Integ
 			assert.NoError(t, err)
 			assert.Equal(t, tc.pkeyValue, result.Id)
 			assert.Equal(t, "Test1", result.Name)
-			assert.Equal(t, int(1), result.Status)
+			assert.Equal(t, 1, result.Status)
 		})
 	}
 }
