@@ -2,11 +2,13 @@
 
 Opinionated Database Extraction Library for Go, It's got some GORM, but does not hide the SQL. 
 
-I admit it, i hate GORM. I firmly believe every developer should have an understanding of SQL and able to build queries. SQL should be part of every developers bread and butter. Having said that, Go's verbose nature can make raw access to database resources, results in alot of code. 
+While GORM is a popular choice, I believe strongly in developers understanding and writing SQL queries directly. SQL
+proficiency should be a fundamental skill for all developers. However, Go's verbose syntax can make database
+interactions quite lengthy and repetitive.
 
 GSDB, works for me, as it provides direct access to run queries and access the results with a simple "record" and "field" types. It also provides Database to Struct transformations. If the struct is has the extra "db" tags to define columns, primary keys read default conditions, GSDB will translate DB resources into Structs and allow thngs like <struct>.Save() methods
 
-GSB is designed to abstract alot of the boiler plate DB code away from you, it makes writing CRUD application easier, with that ease of use, comes trade offs. GSDB uses reflection to determine many of the type conversions, it also holds complete record sets in memory. If you need fast, high performance and effiecent DB access, GSDB probably isn't for you.
+GSB is designed to abstract alot of the boiler plate DB code away from you, it makes writing CRUD applications easier, with that ease of use, comes trade offs. GSDB uses reflection to determine many of the type conversions, it also holds complete record sets in memory. If you need fast, high performance and effiecent DB access, GSDB probably isn't for you.
 
 Another thing I didn't like about SQL handling in Go, was making structs contain SQL data types. Like sql.Null. To me this seems lazy, and ties your struct to a database. Increasing the boiler plate and scaffolding you need to work with the data, to me the data is string or date. Then the struct is string or time.Time. I'm keen to keep primatives, as primative as possible. 
 
@@ -17,7 +19,6 @@ To start a new DB connection, include GSDB library and declare a new connection
 ```go
 gsdb.New(DataSource, StructuredLoggingHandler, context)
 ```
-
 
 ### Executing Queries
 
@@ -76,7 +77,42 @@ In a early version of this library, if there was a nil date, it return time.Now(
 
 ### Save
 
+If the primary key is zero, the an Insert is done, otherwise it's an Update. 
+
+```go
+ type InsertPerson struct {
+        Id      int       `db:"column=id primarykey=yes table=Test"`
+        Name    string    `db:"column=name"`
+        Dtadded time.Time `db:"column=dtadded"`
+        Status  int       `db:"column=status"`
+        Ignored int       `db:"column=ignored omit=yes"`
+    }
+
+	entry := InsertPerson{
+		Name:    "Test",
+		Dtadded: time.Now(),
+		Status:  1,
+	}
+    
+    gsdb.New(DataSource, StructuredLoggingHandler, context)
+    
+    gsdb.Save(entry,0)
+    
+ ```   
+
 ### Counters
+
+You can start a counter anywhere in your call code, and then call the getCounter functions to see how many SQL statements have happened since that counter was started. 
+
+This is experimental at this stage. 
+
+```go
+	MySQL.DB.StartCounter("test")
+	
+	// Loads of DB calls 
+	
+	count := MySQL.DB.GetCounter("test)
+```
 
 ### ColumnWarnings
 
