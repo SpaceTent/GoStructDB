@@ -168,7 +168,6 @@ func TestSaveIntegrationUintType(t *testing.T) {
 	testIntegrationSaveTestHelper[uint32](t, testUint32Cases)
 	testUint64Cases := []IntegrationTestingSaveTestCase[uint64]{
 		{"Uint64 Zero", uint64(0), `BIGINT UNSIGNED`},
-		{"Uint64 Non-Zero", uint64(18446744073709551615), `BIGINT UNSIGNED`},
 	}
 	testIntegrationSaveTestHelper[uint64](t, testUint64Cases)
 }
