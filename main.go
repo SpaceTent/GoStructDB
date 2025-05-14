@@ -1,6 +1,8 @@
 package main
 
-import "GoStructDB/examples"
+import (
+	examples "github.com/SpaceTent/GoStructDB/examples"
+)
 
 func main() {
 

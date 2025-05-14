@@ -10,7 +10,7 @@ import (
 	"github.com/joho/godotenv"
 
 	// MySQL "github.com/SpaceTent/db/mysql" <--- old library
-	MySQL "GoStructDB/gsdb"
+	MySQL "github.com/SpaceTent/GoStructDB/gsdb"
 )
 
 func InsertDateDefault() {

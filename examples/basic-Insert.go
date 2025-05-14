@@ -10,7 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/joho/godotenv/autoload"
 
-	MySQL "GoStructDB/gsdb"
+	MySQL "github.com/SpaceTent/GoStructDB/gsdb"
 )
 
 func BasicInsert() {

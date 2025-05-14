@@ -10,7 +10,7 @@ import (
 
 	"github.com/joho/godotenv"
 
-	MySQL "GoStructDB/gsdb"
+	MySQL "github.com/SpaceTent/GoStructDB/gsdb"
 )
 
 func ConcurrentInserts() {

@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	gsdb "GoStructDB/gsdb"
+	gsdb "github.com/SpaceTent/GoStructDB/gsdb"
 )
 
 func Lite3() {
