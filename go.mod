@@ -1,4 +1,4 @@
-module GoStructDB
+module github.com/SpaceTent/GoStructDB
 
 go 1.24
 
