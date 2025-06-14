@@ -118,5 +118,14 @@ This is experimental at this stage.
 
 ### ColumnWarnings
 
+If the struct doesn't match the SQL returned or generated.  The library will spit out a warning that there is a mis-match, and then ignore it.  You can turn of this warning with 
+
+```go
+    MySQL.ColumnWarnings = true
+    P, _ := MySQL.QuerySingleStruct[InsertPerson]("select * from Test WHERE ID = ?", lastInsertedID)
+```
+If there any fields defined in InsertPerson that don't match the record set, a warning is raised. 
+
+
 ### ShowSQL
 
