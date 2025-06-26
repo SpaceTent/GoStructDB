@@ -10,7 +10,7 @@ GSDB give you some ORM features but you still need to write SQL.
 
 GSDB, works for me, as it provides direct access to run queries and access the results with a simple "record" and "field" types. It also provides Database to Struct transformations. If the struct is has the extra "db" tags to define columns, primary keys read default conditions, GSDB will translate DB resources into Structs and provides like .Save() methods.  Making it easy to define a struct, load it with data and just call a DB.Save to save it to the database
 
-GSDB is designed to abstract alot of the boiler plate DB code away from you, it makes writing CRUD applications easier, with that ease of use, comes trade offs. GSDB uses reflection to determine many of the type conversions, it also holds complete record sets in memory. If you need fast, high performance and effiecent DB access, GSDB probably isn't for you.
+GSDB is designed to abstract alot of the boiler plate DB code away from you, it makes writing CRUD applications easier, with that ease of use, comes trade offs. GSDB uses reflection to determine many of the type conversions, it also holds complete record sets in memory. If you need fast, high performance and efficient DB access, GSDB probably isn't for you.
 
 Another thing I didn't like about SQL handling in Go, was making structs contain SQL data types. Like sql.Null. To me this seems lazy, and ties your struct to a database. Increasing the boiler plate and scaffolding you need to work with the data, to me the data is string or date. Then the struct is string or time.Time. I'm keen to keep primatives, as primative as possible. 
 
