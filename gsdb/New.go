@@ -47,6 +47,23 @@ func New(newDSN string, L *slog.Logger, c context.Context) {
 	DB.Counters.Count = make(map[string]int64)
 }
 
+func NewMySQL(dsn string, L *slog.Logger, c context.Context) {
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		L.With("Error", err, "dsn", dsn).Error("failed to open MySQL database")
+	}
+
+	DB = &Database{
+		connected: true,
+		dbConnection: db,
+		DSN: dsn,
+		Logger: L,
+		Ctx: c,
+	}
+
+	DB.Counters.Count = make(map[string]int64)
+}
+
 func NewSQLite3(fileName string, L *slog.Logger, c context.Context) {
 
 	db, err := sql.Open("sqlite3", fileName)

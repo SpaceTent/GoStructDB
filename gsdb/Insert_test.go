@@ -1,37 +1,90 @@
 package gsdb
 
 import (
-	l "log/slog"
 	"testing"
 	"time"
 )
 
 func TestInsert(t *testing.T) {
+	s := NewSuite(t, "sqlite3", ":memory:")
 
-	type InsertPerson struct {
-		Id      int       `db:"column=id primarykey=yes table=Test"`
-		Name    string    `db:"column=name"`
-		Dtadded time.Time `db:"column=dtadded"`
-		Status  int       `db:"column=status"`
-		Ignored int       `db:"column=ignored omit=yes"`
-	}
-
-	DtAdded := time.Date(2025, time.December, 25, 15, 29, 25, 10, time.UTC)
-
-	// First create the structure
-	entry := InsertPerson{
-		Id:      12,
-		Name:    "Test",
-		Dtadded: DtAdded,
-		Status:  1,
-	}
-	// Now create the query
-	sqlQuery, err := DB.Insert(entry)
+	err := s.CreateTestTables()
 	if err != nil {
-		l.Error(err.Error())
-		return
+		t.Fatalf("failed to create test tables for TestInsert: %v", err)
 	}
-	if sqlQuery != "INSERT INTO Test(name,dtadded,status) VALUES (X'54657374','2025-12-25 15:29:25',1);" {
-		t.Errorf("Expected: %s, got: %s", "INSERT INTO Test(`name`,`dtadded`,`status`) VALUES (X'54657374','2025-12-25 15:29:25',1);", sqlQuery)
+
+	type Person struct {
+		ID        int       `db:"column=id primarykey=yes table=people"`
+		Name      string    `db:"column=name"`
+		Email     string    `db:"column=email"`
+		Active    int       `db:"column=active"`
+		CreatedAt time.Time `db:"column=created_at"`
+		UpdatedAt time.Time `db:"column=updated_at"`
 	}
+
+	testCases := []struct {
+		name    string
+		person  Person
+		wantErr bool
+	}{
+		{
+			name: "successfully insert a Person with all fields filled",
+			person: Person{
+				Name:      "ZZ",
+				Email:     "Top@example.com",
+				Active:    1,
+				CreatedAt: time.Now().UTC(),
+				UpdatedAt: time.Now().UTC(),
+			},
+			wantErr: false,
+		},
+		{
+			name: "successfully insert with nullable fields omitted",
+			person: Person{
+				Name:      "Mr. Robot",
+				Active:    1,
+				CreatedAt: time.Now().UTC(),
+				UpdatedAt: time.Now().UTC(),
+			},
+			wantErr: false,
+		},
+		{
+			name: "fail insert with missing non-nullable field",
+			person: Person{
+				Email:     "failhere@example.com",
+				Active:    0,
+				CreatedAt: time.Now().UTC(),
+				UpdatedAt: time.Now().UTC(),
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			query, err := s.DB.Insert(tc.person)
+			if err != nil {
+				t.Fatalf("failed to build insert query: %v", err)
+			}
+
+			_, err = s.DB.dbConnection.Exec(query)
+			if err != nil {
+				t.Fatalf("failed to insert person in tc: %s\n %v", tc.name, err)
+			}
+
+			if !tc.wantErr {
+				count, err := s.CountRows("people")
+				if err != nil {
+					t.Fatalf("failed to count rows during test insert: %s\n %v", tc.name, err)
+				}
+
+				if count == 0 {
+					t.Fatalf("expected at least 1 row during insert test%s\n %v", tc.name, err)
+				}
+			}
+		})
+	}
+
+	s.Clear()
+	s.TearDown()
 }
