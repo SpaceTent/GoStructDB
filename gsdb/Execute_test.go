@@ -68,17 +68,25 @@ func TestExecute(t *testing.T) {
 				t.Fatalf("failed to execute insert during test: %s: %v", tc.name, err)
 			}
 
-			var queriedName string
-			err = DB.dbConnection.QueryRowContext(
-				context.Background(),
-				`SELECT name FROM test ORDER BY id DESC LIMIT 1`,
-			).Scan(&queriedName)
+			result, err := QuerySingleStruct[TestPerson](`
+				SELECT name, id FROM test ORDER BY id DESC LIMIT 1;
+			`)
 			if err != nil {
-				t.Fatalf("QueryRowContext scan failed in TestExecute: %v", err)
+				t.Fatalf("QuerySingleStruct error during test: %s - %v", tc.name, err)
 			}
-			
-			if tc.expectedLastID != lastInsertedID || queriedName != tc.entry.Name || rowsAffected != 1 {
-				t.Fatalf("lastInsertedID does not match expected entry ID: got: %d want: %d", lastInsertedID, tc.expectedLastID)
+
+			switch {
+			case result.Name != tc.entry.Name:
+				t.Fatalf("queried result name does not match. got: %s want: %s", result.Name, tc.entry.Name)
+
+			case lastInsertedID != tc.expectedLastID:
+				t.Fatalf("expected last inserted IDs to match. got: %d want: %d", lastInsertedID, tc.expectedLastID)
+
+			case int64(result.Id) != tc.expectedLastID:
+				t.Fatalf("expected result.Id of %d to match expectedLastID: %d but got: %d", int64(result.Id), tc.expectedLastID, lastInsertedID)
+
+			case rowsAffected != 1:
+				t.Fatalf("expected only 1 rowsAffected but got %d", rowsAffected)
 			}
 		})
 	}
