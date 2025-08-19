@@ -28,21 +28,26 @@ func TestExecute(t *testing.T) {
 	dtadded DATETIME DEFAULT CURRENT_TIMESTAMP, 
 	status INTEGER NOT NULL
 	);`
-	DB.Execute("DROP TABLE IF EXISTS test;")
-	DB.Execute(tableCreate)
+	_, _, err := DB.Execute("DROP TABLE IF EXISTS test;")
+	if err != nil {
+		t.Fatalf("failed to execute drop table prior to tests: %v", err)
+	}
+	_, _, err = DB.Execute(tableCreate)
+	if err != nil {
+		t.Fatalf("failed to execute tableCreate SQL prior to tests: %v", err)
+	}
 
 	tests := []struct {
 		name    string
 		entry   TestPerson
-		wantErr bool
 	}{
 		{
-			name:    "Execute an Insert success with all fields",
-			entry:   TestPerson{Name: "Ronald McDonald", Dtadded: time.Now().UTC(), Status: 1},
+			name:  "Execute an Insert success with all fields",
+			entry: TestPerson{Name: "Ronald McDonald", Dtadded: time.Now().UTC(), Status: 1},
 		},
 		{
-			name:    "Execute an Insert with fields missing - current setup will populate missing fields with Go zero values",
-			entry:   TestPerson{Dtadded: time.Now().UTC()},
+			name:  "Execute an Insert with fields missing - current setup will populate missing fields with Go zero values",
+			entry: TestPerson{Dtadded: time.Now().UTC()},
 		},
 	}
 
@@ -50,13 +55,23 @@ func TestExecute(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			insertSQL, err := DB.Insert(tc.entry)
 			if err != nil {
-				t.Fatalf("Execute() error: %v, wantErr %v", err, tc.wantErr)
+				t.Fatalf("failed to generate Insert SQL: %v", err)
 			}
 
 			_, _, err = DB.Execute(insertSQL)
 			if err != nil {
-				t.Fatalf("Execute() error: %v, wantErr %v", err, tc.wantErr)
+				t.Fatalf("failed to execute insert during test: %s: %v", tc.name, err)
 			}
+
+			var queriedName string
+			err = DB.dbConnection.QueryRowContext(
+				context.Background(),
+				`SELECT name FROM test ORDER BY id DESC LIMIT 1`,
+			).Scan(&queriedName)
+			if err != nil {
+				t.Fatalf("QueryRowContext scan failed in TestExecute: %v", err)
+			}
+			t.Logf("Fetched name: %q", queriedName)
 		})
 	}
 }
