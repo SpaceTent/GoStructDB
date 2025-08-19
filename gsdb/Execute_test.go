@@ -28,11 +28,13 @@ func TestExecute(t *testing.T) {
 	dtadded DATETIME DEFAULT CURRENT_TIMESTAMP, 
 	status INTEGER NOT NULL
 	);`
-	_, _, err := DB.Execute("DROP TABLE IF EXISTS test;")
+
+	_, err := DB.dbConnection.Exec("DROP TABLE IF EXISTS test;")
 	if err != nil {
 		t.Fatalf("failed to execute drop table prior to tests: %v", err)
 	}
-	_, _, err = DB.Execute(tableCreate)
+	
+	_, err = DB.dbConnection.Exec(tableCreate)
 	if err != nil {
 		t.Fatalf("failed to execute tableCreate SQL prior to tests: %v", err)
 	}
