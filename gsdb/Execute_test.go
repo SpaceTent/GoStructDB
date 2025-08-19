@@ -40,14 +40,17 @@ func TestExecute(t *testing.T) {
 	tests := []struct {
 		name    string
 		entry   TestPerson
+		expectedLastID int64
 	}{
 		{
 			name:  "Execute an Insert success with all fields",
 			entry: TestPerson{Name: "Ronald McDonald", Dtadded: time.Now().UTC(), Status: 1},
+			expectedLastID: 1,
 		},
 		{
 			name:  "Execute an Insert with fields missing - current setup will populate missing fields with Go zero values",
 			entry: TestPerson{Dtadded: time.Now().UTC()},
+			expectedLastID: 2,
 		},
 	}
 
@@ -58,7 +61,7 @@ func TestExecute(t *testing.T) {
 				t.Fatalf("failed to generate Insert SQL: %v", err)
 			}
 
-			_, _, err = DB.Execute(insertSQL)
+			lastInsertedID, rowsAffected, err := DB.Execute(insertSQL)
 			if err != nil {
 				t.Fatalf("failed to execute insert during test: %s: %v", tc.name, err)
 			}
@@ -71,7 +74,10 @@ func TestExecute(t *testing.T) {
 			if err != nil {
 				t.Fatalf("QueryRowContext scan failed in TestExecute: %v", err)
 			}
-			t.Logf("Fetched name: %q", queriedName)
+			
+			if tc.expectedLastID != lastInsertedID || queriedName != tc.entry.Name || rowsAffected != 1 {
+				t.Fatalf("lastInsertedID does not match expected entry ID: got: %d want: %d", lastInsertedID, tc.expectedLastID)
+			}
 		})
 	}
 }
