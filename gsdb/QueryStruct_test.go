@@ -153,8 +153,6 @@ func TestQueryStruct(t *testing.T) {
 				{
 					Name:    "Colonel Sanders",
 					Dtadded: time.Date(2012, 10, 31, 15, 50, 13, 0, time.UTC),
-					Status:  0,
-					Ignored: 0,
 				},
 			},
 			expectedResult: []TestPerson{
