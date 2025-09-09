@@ -1,131 +1,123 @@
-# Go StructDB - gsdb
+# Go StructDB (GSDB)
 
-Opinionated Database Extraction Library for Go, It's got some ORM, but does not hide the SQL. 
+GSDB is a lightweight database library for Go.  
+It provides basic ORM-style features but keeps SQL explicit.
 
-While GORM is a popular choice, I believe strongly in developers understanding and writing SQL queries directly. SQL
-proficiency should be a fundamental skill for all developers. However, Go's verbose syntax can make database
-interactions quite lengthy and repetitive.
+Unlike full ORMs such as GORM, GSDB requires you to write SQL queries directly while reducing repetitive boilerplate code.
 
-GSDB give you some ORM features but you still need to write SQL. 
+---
 
-GSDB, works for me, as it provides direct access to run queries and access the results with a simple "record" and "field" types. It also provides Database to Struct transformations. If the struct is has the extra "db" tags to define columns, primary keys read default conditions, GSDB will translate DB resources into Structs and provides like .Save() methods.  Making it easy to define a struct, load it with data and just call a DB.Save to save it to the database
+## Philosophy
 
-GSDB is designed to abstract alot of the boiler plate DB code away from you, it makes writing CRUD applications easier, with that ease of use, comes trade offs. GSDB uses reflection to determine many of the type conversions, it also holds complete record sets in memory. If you need fast, high performance and efficient DB access, GSDB probably isn't for you.
+- SQL should be written and understood by developers.
+- Structs should use Go primitives (`string`, `time.Time`) instead of database-specific types like `sql.Null*`.
+- Convenience methods should simplify CRUD operations without hiding the underlying SQL.
 
-Another thing I didn't like about SQL handling in Go, was making structs contain SQL data types. Like sql.Null. To me this seems lazy, and ties your struct to a database. Increasing the boiler plate and scaffolding you need to work with the data, to me the data is string or date. Then the struct is string or time.Time. I'm keen to keep primatives, as primative as possible. 
+---
 
-### Connecting
+## Installation
 
-To start a new DB connection, include GSDB library and declare a new connection
-
-```go
-gsdb.New(DataSource, StructuredLoggingHandler, context)
+```bash
+go get github.com/SpaceTent/GoStructDB/gsdb
 ```
 
-### Executing Queries
-
+## Connecting
 ```go
-lastInsertedID, rowsAffected, err := gsdb.DB.Execute(sqlQuery,parameters...)
-```
-### Making Insert and Update SQL
-
-gsdb provides 2 functions to make SQL statements from structs, DB.Insert and DB.Update. If you pass in any variable from a struct, the library will build the SQL nessesary for an INSERT or UPDATE statement.
-
-```go
-    type InsertPerson struct {
-        Id      int       `db:"column=id primarykey=yes table=Test"`
-        Name    string    `db:"column=name"`
-        Dtadded time.Time `db:"column=dtadded"`
-        Status  int       `db:"column=status"`
-        Ignored int       `db:"column=ignored omit=yes"`
-    }
-
-	entry := InsertPerson{
-		Name:    "Test",
-		Dtadded: time.Now(),
-		Status:  1,
-	}
-	sqlQuery, err := MySQL.DB.Insert(entry)
-	if err != nil {
-		l.Error(err.Error())
-		return
-	}
-	
-	lastInsertedID, rowsAffected, err := MySQL.DB.Execute(sqlQuery)
-	if err != nil {
-		l.Error(err.Error())
-	}
-	l.Info(fmt.Sprintf("Item with ID %d was inserted. %d rows were affected", lastInsertedID, rowsAffected))
+db := gsdb.New(dataSource, logger, ctx)
 ```
 
-### Hex conversion of strings
+## Executing Queries
 
-All strings, are converted to HEX. This ensures even the most challenging characters are written to the db as it, it also makes SQL injections attacks difficult.  
+```go
+lastInsertedID, rowsAffected, err := db.Execute(sqlQuery, params...)
 
+```
+
+## Insert and Update from Structs
+GSDB can build SQL statements from structs with db.Insert and db.Update.
+
+```go
+type InsertPerson struct {
+    Id      int       `db:"column=id primarykey=yes table=Test"`
+    Name    string    `db:"column=name"`
+    Dtadded time.Time `db:"column=dtadded"`
+    Status  int       `db:"column=status"`
+    Ignored int       `db:"column=ignored omit=yes"`
+}
+
+entry := InsertPerson{
+    Name:    "Test",
+    Dtadded: time.Now(),
+    Status:  1,
+}
+
+sqlQuery, err := db.Insert(entry)
+if err != nil {
+    log.Error(err.Error())
+    return
+}
+
+lastInsertedID, rowsAffected, err := db.Execute(sqlQuery)
+```
+### Resulting SQL:
 ```sql
-INSERT INTO Test(name,dtadded,status) VALUES (X'54657374','2025-12-25 15:29:25',1);
+INSERT INTO Test(name,dtadded,status)
+VALUES (X'54657374','2025-12-25 15:29:25',1);
 ```
+
+## Query Structs
 
 ### QueryStruct
-
-QueryStruct will return a slice of type T containing all the data.
+Returns a slice of structs
+```go
+people, err := db.QueryStruct[InsertPerson]("SELECT * FROM Test")
+```
 
 ### QuerySingleStruct
-
-This works the same as QueryStruct, but returns T, not a slice of type T. 
-When returning datetimes from the database, there are some extra options to determine how you can view NULL or EMPTY dates in the database. "readdefault=now" or "readdefault=zero"
-
-In a early version of this library, if there was a nil date, it return time.Now(), which is actually undeserved, however early versions of applications depending on a null = time.Now for the some of the business logic. So this was left in as default behaviour, however to handle things properly readdefault=zero, is best. As the date is returned as "0001-01-01 00:00:00"
-
-### Save
-
-If the primary key is zero, the an Insert is done, otherwise it's an Update. 
+Returns a single struct
 
 ```go
- type InsertPerson struct {
-        Id      int       `db:"column=id primarykey=yes table=Test"`
-        Name    string    `db:"column=name"`
-        Dtadded time.Time `db:"column=dtadded"`
-        Status  int       `db:"column=status"`
-        Ignored int       `db:"column=ignored omit=yes"`
-    }
-
-	entry := InsertPerson{
-		Name:    "Test",
-		Dtadded: time.Now(),
-		Status:  1,
-	}
-    
-    gsdb.New(DataSource, StructuredLoggingHandler, context)
-    
-    gsdb.Save(entry,0)
-    
- ```   
-
-### Counters
-
-You can start a counter anywhere in your call code, and then call the getCounter functions to see how many SQL statements have happened since that counter was started. 
-
-This is experimental at this stage. 
-
-```go
-	MySQL.DB.StartCounter("test")
-	
-	// Loads of DB calls 
-	
-	count := MySQL.DB.GetCounter("test)
+person, err := db.QuerySingleStruct[InsertPerson]("SELECT * FROM Test WHERE id = ?", id)
 ```
 
-### ColumnWarnings
+## Handling NULL Dates
+- readdefault=now → NULL becomes time.Now(). (Legacy, not recommended.)
+- readdefault=zero → NULL becomes Go’s zero time (0001-01-01 00:00:00). (Recommended.)
 
-If the struct doesn't match the SQL returned or generated.  The library will spit out a warning that there is a mis-match, and then ignore it.  You can turn of this warning with 
-
+## Save
+`db.Save` decides whether to insert or update based on the primary key
 ```go
-    MySQL.ColumnWarnings = true
-    P, _ := MySQL.QuerySingleStruct[InsertPerson]("select * from Test WHERE ID = ?", lastInsertedID)
+entry := InsertPerson{
+    Name:    "Test",
+    Dtadded: time.Now(),
+    Status:  1,
+}
+
+db.Save(entry, 0)
 ```
-If there any fields defined in InsertPerson that don't match the record set, a warning is raised. 
 
+if `Id == 0`, it runs INSERT, otherwise, it runs an UPDATE
 
-### ShowSQL
+## Counters (experimental)
+Track how many queries are executed between checkpoints
+```go
+db.StartCounter("test")
+// multiple db calls
+count := db.GetCounter("test")
+```
 
+## Column Warnings
+If struct fields don't match the query result, GSDB raises a warning
+```go
+db.ColumnWarnings = true
+p, _ := db.QuerySingleStruct[InsertPerson]("SELECT * FROM Test WHERE id = ?", id)
+```
+
+## Trade-offs
+- Uses reflection for type conversions
+- Loads complete record sets into memory
+- Not intended for high-performance or large-scale data processing
+
+## Summary
+GSDB reduces Go’s database boilerplate while keeping SQL explicit.
+It is best suited for small to medium CRUD applications where clarity and simplicity matter more than raw performance.
