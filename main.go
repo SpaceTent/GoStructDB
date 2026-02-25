@@ -1,7 +1,7 @@
 package main
 
 import (
-	examples "github.com/SpaceTent/GoStructDB/examples"
+	"github.com/SpaceTent/GoStructDB/examples"
 )
 
 func main() {
