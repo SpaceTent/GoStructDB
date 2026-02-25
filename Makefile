@@ -21,9 +21,14 @@ release: fmt
 test:
 	go test -v -coverprofile=profile.cov ./...
 
+
 commit: fmt
+	@govulncheck ./...
 	@git add .
-	@git commit -a -m "$(m)"
+	@git commit -a -m "$(filter-out $@,$(MAKECMDGOALS))"
 	@git pull
 	@git push
+
+%:
+	@:
 

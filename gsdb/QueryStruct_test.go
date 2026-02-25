@@ -56,7 +56,7 @@ func TestQuerySingleStruct(t *testing.T) {
 				Ignored: 0,
 			},
 			expectedResult: TestPerson{
-				Id: 1,
+				Id:      1,
 				Name:    "Ronald McDonald",
 				Dtadded: time.Date(2012, 10, 31, 15, 50, 13, 0, time.UTC),
 				Status:  1,
@@ -66,11 +66,11 @@ func TestQuerySingleStruct(t *testing.T) {
 		{
 			name: "Successfully return a struct with some missing fields populated by Go zero values",
 			entry: TestPerson{
-				Name:   "Colonel Sanders",
+				Name:    "Colonel Sanders",
 				Dtadded: time.Date(2012, 10, 31, 15, 50, 13, 0, time.UTC),
 			},
 			expectedResult: TestPerson{
-				Id: 2,
+				Id:      2,
 				Name:    "Colonel Sanders",
 				Dtadded: time.Date(2012, 10, 31, 15, 50, 13, 0, time.UTC),
 				Status:  0,

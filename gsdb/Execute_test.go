@@ -33,25 +33,25 @@ func TestExecute(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to execute drop table prior to tests: %v", err)
 	}
-	
+
 	_, err = DB.dbConnection.Exec(tableCreate)
 	if err != nil {
 		t.Fatalf("failed to execute tableCreate SQL prior to tests: %v", err)
 	}
 
 	tests := []struct {
-		name    string
-		entry   TestPerson
+		name           string
+		entry          TestPerson
 		expectedLastID int64
 	}{
 		{
-			name:  "Execute an Insert success with all fields",
-			entry: TestPerson{Name: "Ronald McDonald", Dtadded: time.Now().UTC(), Status: 1},
+			name:           "Execute an Insert success with all fields",
+			entry:          TestPerson{Name: "Ronald McDonald", Dtadded: time.Now().UTC(), Status: 1},
 			expectedLastID: 1,
 		},
 		{
-			name:  "Execute an Insert with fields missing - current setup will populate missing fields with Go zero values",
-			entry: TestPerson{Dtadded: time.Now().UTC()},
+			name:           "Execute an Insert with fields missing - current setup will populate missing fields with Go zero values",
+			entry:          TestPerson{Dtadded: time.Now().UTC()},
 			expectedLastID: 2,
 		},
 	}
