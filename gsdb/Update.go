@@ -53,7 +53,14 @@ func (db *Database) Update(dbStructure any) (string, error) {
 				case "bool":
 					buildsql = buildsql + fmt.Sprintf("%v", value) + ","
 				case "Time":
-					buildsql = buildsql + fmt.Sprintf("'%s'", value.(time.Time).Format("2006-01-02 15:04:05")) + ","
+					timeValue := value.(time.Time)
+					// If the model uses readdefault=null and is zero time,
+					// persist SQL NULL instead of a zero-date timestamp.
+					if dbStructureMap["readdefault"] == "null" && timeValue.IsZero() {
+						buildsql = buildsql + "NULL,"
+					} else {
+						buildsql = buildsql + fmt.Sprintf("'%s'", timeValue.Format("2006-01-02 15:04:05")) + ","
+					}
 				default:
 					db.Logger.With("type", field.Type.Name()).With("value", value).Error("type error")
 					buildsql = buildsql + "'" + value.(string) + "',"

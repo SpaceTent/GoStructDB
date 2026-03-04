@@ -67,7 +67,14 @@ func generateValuesSql(dbStructure any, t reflect.Type) (string, error) {
 				case "bool":
 					sb.WriteString(fmt.Sprintf("%v,", value))
 				case "Time":
-					sb.WriteString(fmt.Sprintf("'%s',", value.(time.Time).Format("2006-01-02 15:04:05")))
+					timeValue := value.(time.Time)
+					// If the model uses readdefault=null and is zero time,
+					// persist SQL NULL instead of a zero-date timestamp.
+					if dbStructureMap["readdefault"] == "null" && timeValue.IsZero() {
+						sb.WriteString("NULL,")
+					} else {
+						sb.WriteString(fmt.Sprintf("'%s',", timeValue.Format("2006-01-02 15:04:05")))
+					}
 				default:
 					l.With("type", field.Type.Name()).With("value", value).Error("type error")
 					sb.WriteString(fmt.Sprintf(`'%s',`, value.(string)))

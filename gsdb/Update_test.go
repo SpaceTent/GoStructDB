@@ -21,6 +21,18 @@ type UpdatePersonTime struct {
 	Dtadded time.Time `db:"column=dtadded"`
 }
 
+type UpdatePersonTimeNull struct {
+	Id      int       `db:"column=id primarykey=yes table=Users"`
+	Name    string    `db:"column=name"`
+	Dtadded time.Time `db:"column=dtadded readdefault=null"`
+}
+
+type UpdatePersonTimeNoDirective struct {
+	Id      int       `db:"column=id primarykey=yes table=Users"`
+	Name    string    `db:"column=name"`
+	Dtadded time.Time `db:"column=dtadded"`
+}
+
 func generateUpdatePerson[StatusType uint | uint8 | uint16 | uint32 | uint64 | int | int8 | int16 | int32 | int64 | float32 | float64 | string | bool](value StatusType) UpdatePerson[StatusType] {
 	return UpdatePerson[StatusType]{
 		0, "Test", time.Now(), value,
@@ -30,6 +42,24 @@ func generateUpdatePerson[StatusType uint | uint8 | uint16 | uint32 | uint64 | i
 func generateUpdatePersonTime(id int) UpdatePersonTime {
 	return UpdatePersonTime{
 		id, "Test", time.Date(2024, time.December, 7, 15, 29, 25, 10, time.UTC),
+	}
+}
+
+func generateUpdatePersonTimeNull(id int) UpdatePersonTimeNull {
+	return UpdatePersonTimeNull{
+		id, "Test", time.Time{},
+	}
+}
+
+func generateUpdatePersonTimeNullWithValue(id int, dateValue time.Time) UpdatePersonTimeNull {
+	return UpdatePersonTimeNull{
+		id, "Test", dateValue,
+	}
+}
+
+func generateUpdatePersonTimeNoDirective(id int) UpdatePersonTimeNoDirective {
+	return UpdatePersonTimeNoDirective{
+		id, "Test", time.Time{},
 	}
 }
 
@@ -51,6 +81,11 @@ func testUpdateStringErrorValueHelper(t *testing.T, sql string, err error) {
 func testUpdateTimeErrorValueHelper(t *testing.T, sql string, err error) {
 	assert.NoError(t, err)
 	assert.Equal(t, "UPDATE Users SET name=X'54657374',dtadded='2024-12-07 15:29:25' WHERE id=0;", sql)
+}
+
+func testUpdateTimeNullErrorValueHelper(t *testing.T, sql string, err error) {
+	assert.NoError(t, err)
+	assert.Equal(t, "UPDATE Users SET name=X'54657374',dtadded=NULL WHERE id=0;", sql)
 }
 
 func TestUpdate(t *testing.T) {
@@ -88,6 +123,9 @@ func TestUpdate(t *testing.T) {
 
 	sql, err = DB.Update(generateUpdatePersonTime(0))
 	testUpdateTimeErrorValueHelper(t, sql, err)
+
+	sql, err = DB.Update(generateUpdatePersonTimeNull(0))
+	testUpdateTimeNullErrorValueHelper(t, sql, err)
 }
 
 func TestNoColumnNameUpdate(t *testing.T) {
@@ -122,6 +160,40 @@ func TestNoColumnNameUpdate(t *testing.T) {
 	sql, err = DB.Update(testTypeEntry3)
 	assert.EqualError(t, err, "no column name specified for field Name")
 	assert.Empty(t, sql)
+}
+
+func TestUpdateReadDefaultNullMatrix(t *testing.T) {
+	New("", nil, context.Background())
+
+	tests := []struct {
+		name     string
+		entry    any
+		expected string
+	}{
+		{
+			name:     "readdefault null with zero time writes NULL",
+			entry:    generateUpdatePersonTimeNull(1),
+			expected: "UPDATE Users SET name=X'54657374',dtadded=NULL WHERE id=1;",
+		},
+		{
+			name:     "readdefault null with non-zero time writes timestamp",
+			entry:    generateUpdatePersonTimeNullWithValue(2, time.Date(2024, time.December, 7, 15, 29, 25, 10, time.UTC)),
+			expected: "UPDATE Users SET name=X'54657374',dtadded='2024-12-07 15:29:25' WHERE id=2;",
+		},
+		{
+			name:     "no directive with zero time writes zero timestamp",
+			entry:    generateUpdatePersonTimeNoDirective(3),
+			expected: "UPDATE Users SET name=X'54657374',dtadded='0001-01-01 00:00:00' WHERE id=3;",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			sql, err := DB.Update(tc.entry)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expected, sql)
+		})
+	}
 }
 
 func TestNoTableNameUpdate(t *testing.T) {

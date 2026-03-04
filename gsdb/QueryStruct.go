@@ -68,6 +68,10 @@ func QueryStruct[T any](sql string, parameters ...any) ([]T, error) {
 					param = "zero"
 				}
 
+				if dbStructureMap["readdefault"] == "null" {
+					param = "zero"
+				}
+
 				reflect.ValueOf(&newStructRecord).Elem().FieldByName(structFieldName).Set(reflect.ValueOf(v.AsDate(param)))
 
 				// Add Blob Support.
