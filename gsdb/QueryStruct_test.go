@@ -200,3 +200,252 @@ func TestQueryStruct(t *testing.T) {
 		})
 	}
 }
+
+func TestInsertWithReadDefaultNullWritesNullDate(t *testing.T) {
+	textHandler := slog.NewTextHandler(os.Stdout, nil)
+	l := slog.New(textHandler)
+	NewSQLite3("test.db", l, context.Background())
+
+	type TestPersonNullDateInsert struct {
+		Id      int       `db:"column=id primarykey=yes table=Test"`
+		Name    string    `db:"column=name"`
+		Dtadded time.Time `db:"column=dtadded readdefault=null"`
+		Status  int       `db:"column=status"`
+	}
+
+	tableCreate := `
+	CREATE TABLE IF NOT EXISTS test (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name TEXT NOT NULL,
+	dtadded DATETIME DEFAULT CURRENT_TIMESTAMP,
+	status INTEGER NOT NULL
+	);`
+
+	_, err := DB.dbConnection.Exec("DROP TABLE IF EXISTS test;")
+	if err != nil {
+		t.Fatalf("failed to execute drop table prior to tests: %v", err)
+	}
+
+	_, err = DB.dbConnection.Exec(tableCreate)
+	if err != nil {
+		t.Fatalf("failed to execute tableCreate SQL prior to tests: %v", err)
+	}
+
+	entry := TestPersonNullDateInsert{
+		Name:   "Test",
+		Status: 1,
+	}
+
+	insertSQL, err := DB.Insert(entry)
+	if err != nil {
+		t.Fatalf("failed to generate Insert SQL: %v", err)
+	}
+
+	_, _, err = DB.Execute(insertSQL)
+	if err != nil {
+		t.Fatalf("failed to execute insert: %v", err)
+	}
+
+	records, err := DB.Query("SELECT dtadded FROM test WHERE id = 1")
+	if err != nil {
+		t.Fatalf("failed to query inserted row: %v", err)
+	}
+
+	if len(records) != 1 {
+		t.Fatalf("expected 1 record, got %d", len(records))
+	}
+
+	if records[0]["dtadded"].Value != nil {
+		t.Fatalf("expected dtadded to be NULL, got: %v", records[0]["dtadded"].Value)
+	}
+}
+
+func TestQuerySingleStructReadDefaultNullReturnsZeroTime(t *testing.T) {
+	textHandler := slog.NewTextHandler(os.Stdout, nil)
+	l := slog.New(textHandler)
+	NewSQLite3("test.db", l, context.Background())
+
+	type TestPersonNullDateQuery struct {
+		Id      int       `db:"column=id primarykey=yes table=Test"`
+		Name    string    `db:"column=name"`
+		Dtadded time.Time `db:"column=dtadded readdefault=null"`
+		Status  int       `db:"column=status"`
+	}
+
+	tableCreate := `
+	CREATE TABLE IF NOT EXISTS test (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name TEXT NOT NULL,
+	dtadded DATETIME DEFAULT CURRENT_TIMESTAMP,
+	status INTEGER NOT NULL
+	);`
+
+	_, err := DB.dbConnection.Exec("DROP TABLE IF EXISTS test;")
+	if err != nil {
+		t.Fatalf("failed to execute drop table prior to tests: %v", err)
+	}
+
+	_, err = DB.dbConnection.Exec(tableCreate)
+	if err != nil {
+		t.Fatalf("failed to execute tableCreate SQL prior to tests: %v", err)
+	}
+
+	entry := TestPersonNullDateQuery{
+		Name:   "Test",
+		Status: 1,
+	}
+
+	insertSQL, err := DB.Insert(entry)
+	if err != nil {
+		t.Fatalf("failed to generate Insert SQL: %v", err)
+	}
+
+	lastInsertedID, _, err := DB.Execute(insertSQL)
+	if err != nil {
+		t.Fatalf("failed to execute insert: %v", err)
+	}
+
+	result, err := QuerySingleStruct[TestPersonNullDateQuery]("SELECT * FROM test WHERE id = ?", lastInsertedID)
+	if err != nil {
+		t.Fatalf("query failed: %v", err)
+	}
+
+	if !result.Dtadded.IsZero() {
+		t.Fatalf("expected Dtadded to be zero time for SQL NULL with readdefault=null, got: %v", result.Dtadded)
+	}
+}
+
+func TestQuerySingleStructReadDefaultNullReturnsNonZeroTime(t *testing.T) {
+	textHandler := slog.NewTextHandler(os.Stdout, nil)
+	l := slog.New(textHandler)
+	NewSQLite3("test.db", l, context.Background())
+
+	type TestPersonNullDateQuery struct {
+		Id      int       `db:"column=id primarykey=yes table=Test"`
+		Name    string    `db:"column=name"`
+		Dtadded time.Time `db:"column=dtadded readdefault=null"`
+		Status  int       `db:"column=status"`
+	}
+
+	tableCreate := `
+	CREATE TABLE IF NOT EXISTS test (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name TEXT NOT NULL,
+	dtadded DATETIME DEFAULT CURRENT_TIMESTAMP,
+	status INTEGER NOT NULL
+	);`
+
+	_, err := DB.dbConnection.Exec("DROP TABLE IF EXISTS test;")
+	if err != nil {
+		t.Fatalf("failed to execute drop table prior to tests: %v", err)
+	}
+
+	_, err = DB.dbConnection.Exec(tableCreate)
+	if err != nil {
+		t.Fatalf("failed to execute tableCreate SQL prior to tests: %v", err)
+	}
+
+	expected := time.Date(2025, time.December, 25, 15, 29, 25, 0, time.UTC)
+	entry := TestPersonNullDateQuery{
+		Name:    "Test",
+		Dtadded: expected,
+		Status:  1,
+	}
+
+	insertSQL, err := DB.Insert(entry)
+	if err != nil {
+		t.Fatalf("failed to generate Insert SQL: %v", err)
+	}
+
+	lastInsertedID, _, err := DB.Execute(insertSQL)
+	if err != nil {
+		t.Fatalf("failed to execute insert: %v", err)
+	}
+
+	result, err := QuerySingleStruct[TestPersonNullDateQuery]("SELECT * FROM test WHERE id = ?", lastInsertedID)
+	if err != nil {
+		t.Fatalf("query failed: %v", err)
+	}
+
+	if !result.Dtadded.Equal(expected) {
+		t.Fatalf("expected Dtadded %v, got: %v", expected, result.Dtadded)
+	}
+}
+
+func TestQueryStructReadDefaultNullMixedRows(t *testing.T) {
+	textHandler := slog.NewTextHandler(os.Stdout, nil)
+	l := slog.New(textHandler)
+	NewSQLite3("test.db", l, context.Background())
+
+	type TestPersonNullDateQuery struct {
+		Id      int       `db:"column=id primarykey=yes table=Test"`
+		Name    string    `db:"column=name"`
+		Dtadded time.Time `db:"column=dtadded readdefault=null"`
+		Status  int       `db:"column=status"`
+	}
+
+	tableCreate := `
+	CREATE TABLE IF NOT EXISTS test (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name TEXT NOT NULL,
+	dtadded DATETIME DEFAULT CURRENT_TIMESTAMP,
+	status INTEGER NOT NULL
+	);`
+
+	_, err := DB.dbConnection.Exec("DROP TABLE IF EXISTS test;")
+	if err != nil {
+		t.Fatalf("failed to execute drop table prior to tests: %v", err)
+	}
+
+	_, err = DB.dbConnection.Exec(tableCreate)
+	if err != nil {
+		t.Fatalf("failed to execute tableCreate SQL prior to tests: %v", err)
+	}
+
+	first := TestPersonNullDateQuery{
+		Name:   "Test",
+		Status: 1,
+	}
+
+	secondExpected := time.Date(2025, time.December, 25, 15, 29, 25, 0, time.UTC)
+	second := TestPersonNullDateQuery{
+		Name:    "Test",
+		Dtadded: secondExpected,
+		Status:  2,
+	}
+
+	insertSQL, err := DB.Insert(first)
+	if err != nil {
+		t.Fatalf("failed to generate first Insert SQL: %v", err)
+	}
+	_, _, err = DB.Execute(insertSQL)
+	if err != nil {
+		t.Fatalf("failed to execute first insert: %v", err)
+	}
+
+	insertSQL, err = DB.Insert(second)
+	if err != nil {
+		t.Fatalf("failed to generate second Insert SQL: %v", err)
+	}
+	_, _, err = DB.Execute(insertSQL)
+	if err != nil {
+		t.Fatalf("failed to execute second insert: %v", err)
+	}
+
+	results, err := QueryStruct[TestPersonNullDateQuery]("SELECT * FROM test ORDER BY id ASC")
+	if err != nil {
+		t.Fatalf("query failed: %v", err)
+	}
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 rows, got %d", len(results))
+	}
+
+	if !results[0].Dtadded.IsZero() {
+		t.Fatalf("expected first Dtadded to be zero time, got: %v", results[0].Dtadded)
+	}
+
+	if !results[1].Dtadded.Equal(secondExpected) {
+		t.Fatalf("expected second Dtadded %v, got: %v", secondExpected, results[1].Dtadded)
+	}
+}
