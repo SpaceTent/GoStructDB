@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/SpaceTent/GoStructDB/examples"
-)
+import "github.com/SpaceTent/GoStructDB/examples"
 
 func main() {
 
@@ -12,5 +10,5 @@ func main() {
 	examples.InsertDateDefault()
 	examples.MissingColumns()
 	examples.Lite3()
-
+	examples.SaveReadDefaultNull()
 }

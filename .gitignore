@@ -2,3 +2,4 @@
 .idea/*
 test.db
 profile.cov
+.vscode/

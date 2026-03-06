@@ -23,7 +23,7 @@ func InsertDateDefault() {
 	l := slog.New(textHandler)
 
 	// MySQL.New(DSN, l, context.Background())
-	MySQL.New(DSN, l, context.Background())
+	MySQL.NewSQLite3(DSN, l, context.Background())
 
 	type InsertPersonNOW struct {
 		Id      int       `db:"column=id primarykey=yes table=Test"`
@@ -45,6 +45,14 @@ func InsertDateDefault() {
 		Id      int       `db:"column=id primarykey=yes table=Test"`
 		Name    string    `db:"column=name"`
 		Dtadded time.Time `db:"column=dtadded"`
+		Status  int       `db:"column=status"`
+		Ignored int       `db:"column=ignored omit=yes"`
+	}
+
+	type InsertPersonNULL struct {
+		Id      int       `db:"column=id primarykey=yes table=Test"`
+		Name    string    `db:"column=name"`
+		Dtadded time.Time `db:"column=dtadded readdefault=null"`
 		Status  int       `db:"column=status"`
 		Ignored int       `db:"column=ignored omit=yes"`
 	}
@@ -76,6 +84,29 @@ func InsertDateDefault() {
 		l.Error("Query error: " + err4.Error())
 	} else {
 		l.With("Date Should be DEFAULT", test3.Dtadded).Info("Date")
+	}
+
+	nullEntry := InsertPersonNULL{
+		Name:    "Test",
+		Dtadded: time.Time{},
+		Status:  1,
+	}
+
+	nullInsertSQL, err6 := MySQL.DB.Insert(nullEntry)
+	if err6 != nil {
+		l.Error(err6.Error())
+	} else {
+		nullInsertedID, _, err7 := MySQL.DB.Execute(nullInsertSQL)
+		if err7 != nil {
+			l.Error(err7.Error())
+		} else {
+			test4, err8 := MySQL.QuerySingleStruct[InsertPersonNULL]("SELECT * FROM test WHERE id = ?", nullInsertedID)
+			if err8 != nil {
+				l.Error("Query error: " + err8.Error())
+			} else {
+				l.With("Date Should be NULL/zero", test4.Dtadded).Info("Date")
+			}
+		}
 	}
 
 	l.Info(fmt.Sprintf("Item with ID %d was inserted. %d rows were affected", lastInsertedID, rowsAffected))
