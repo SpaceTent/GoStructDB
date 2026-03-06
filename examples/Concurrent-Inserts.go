@@ -20,7 +20,8 @@ func ConcurrentInserts() {
 	textHandler := slog.NewTextHandler(os.Stdout, nil)
 	l := slog.New(textHandler)
 
-	MySQL.New(DSN, l, context.Background())
+	// MySQL.New(DSN, l, context.Background())
+	MySQL.NewSQLite3(DSN, l, context.Background())
 
 	type InsertPerson struct {
 		Id      int       `db:"column=id primarykey=yes table=Test"`
