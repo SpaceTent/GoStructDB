@@ -31,6 +31,9 @@ type Counters struct {
 	Lock  sync.Mutex
 }
 
+var MaxOpenConns = 50
+var MaxIdleConns = 50
+
 var DB *Database
 var ColumnWarnings bool = false
 var ShowSQL bool = false
@@ -104,8 +107,8 @@ func getConnection() (*sql.DB, error) {
 		return nil, err
 	}
 
-	DB.dbConnection.SetMaxOpenConns(25)
-	DB.dbConnection.SetMaxIdleConns(25)
+	DB.dbConnection.SetMaxOpenConns(MaxOpenConns)
+	DB.dbConnection.SetMaxIdleConns(MaxIdleConns)
 	DB.dbConnection.SetConnMaxIdleTime(5 * time.Minute)
 	DB.connected = true
 	DB.Lock.Unlock()
