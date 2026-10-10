@@ -1,0 +1,59 @@
+name: Bug report
+description: Something in GSDB doesn't work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please **do not** report security issues here; see SECURITY.md.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead? Include any error messages.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: The struct definition (with `db` tags), the table schema, and the GSDB calls that trigger the problem.
+      render: go
+    validations:
+      required: true
+  - type: textarea
+    id: sql
+    attributes:
+      label: Generated SQL / logs
+      description: Output with `gsdb.ShowSQL = true`, if relevant. Remove any secrets.
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: GSDB version
+      placeholder: v0.0.14
+    validations:
+      required: true
+  - type: dropdown
+    id: database
+    attributes:
+      label: Database
+      options:
+        - MySQL
+        - MariaDB
+        - SQLite
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: db-version
+    attributes:
+      label: Database version
+      placeholder: MySQL 8.4 / SQLite 3.46
+  - type: input
+    id: go-version
+    attributes:
+      label: Go version and OS
+      placeholder: go1.26.0 linux/amd64
+    validations:
+      required: true

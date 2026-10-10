@@ -1,0 +1,27 @@
+name: Feature request
+description: Suggest an idea or improvement for GSDB
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the use case. GSDB deliberately keeps SQL visible, so explain where the current API gets in the way.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like GSDB to do? An example of the API you'd like to write helps a lot.
+      render: go
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd be willing to open a pull request for this.
